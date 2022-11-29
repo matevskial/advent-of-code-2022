@@ -1,0 +1,36 @@
+### IntelliJ IDEA ###
+.idea/*
+!.idea/codeStyles
+!.idea/runConfigurations
+!.idea/checkstyle-config-88.xml
+!.idea/checkstyle-idea.xml
+!.idea/suppressions.xml
+!.idea/runConfigurations/*
+*.iml
+*.iws
+*.ipr
+out/
+!**/src/main/generated/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### Gradle ###
+.gradle
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Build
+target
+
+input?*.txt
