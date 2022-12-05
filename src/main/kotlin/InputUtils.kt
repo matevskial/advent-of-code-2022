@@ -9,13 +9,14 @@ fun readChunkedLines(input:String): List<List<String>> {
     val lines = readLines(input)
     var currentChunk = arrayListOf<String>()
     for ((i, v) in lines.withIndex()) {
-        if(v.isBlank() || i == lines.size) {
+        if(v.isNotBlank()) {
+            currentChunk.add(v)
+        }
+        if(v.isBlank() || i == lines.size - 1) {
             if(currentChunk.isNotEmpty()) {
                 chunked.add(currentChunk)
                 currentChunk = arrayListOf()
             }
-        } else {
-            currentChunk.add(v)
         }
     }
     return chunked
