@@ -9,8 +9,32 @@ fun main() {
     var unitsOfSandAtRest = simulateFallingSand(cave, Pair(500, 0))
     println("part1: $unitsOfSandAtRest")
     cave.setupPart2()
-    unitsOfSandAtRest = simulateFallingSand(cave, Pair(500, 0))
+    unitsOfSandAtRest = calculateUnitsOfSandAtRestPart2(cave, Pair(500, 0))
     println("part2: $unitsOfSandAtRest")
+}
+
+fun calculateUnitsOfSandAtRestPart2(cave: Cave, sandSource: Pair<Int, Int>): Int {
+    val stack = ArrayDeque<Pair<Int, Int>>()
+    stack.addFirst(sandSource)
+    while (stack.isNotEmpty()) {
+        val currentSandAtRest = stack.removeLast()
+        cave.addUnitOfSandAtRest(currentSandAtRest)
+
+        val possibleSandAtRestDown = Pair(currentSandAtRest.first, currentSandAtRest.second + 1)
+        val possibleSandAtRestDiagonallyDownLeft = Pair(currentSandAtRest.first - 1, currentSandAtRest.second + 1)
+        val possibleSandAtRestDiagonallyDownRight = Pair(currentSandAtRest.first + 1, currentSandAtRest.second + 1)
+
+        addIfIsAir(possibleSandAtRestDiagonallyDownRight, stack, cave)
+        addIfIsAir(possibleSandAtRestDown, stack, cave)
+        addIfIsAir(possibleSandAtRestDiagonallyDownLeft, stack, cave)
+    }
+    return cave.getUnitsOfSandAtRest()
+}
+
+fun addIfIsAir(position: Pair<Int, Int>, deque: ArrayDeque<Pair<Int, Int>>, cave: Cave) {
+    if(cave.isAirPart2(position)) {
+        deque.addLast(position)
+    }
 }
 
 fun simulateFallingSand(cave: Cave, sandSource: Pair<Int, Int>): Int {
@@ -49,35 +73,32 @@ fun simulateFallingUnitOfSand(cave: Cave, sandSource: Pair<Int, Int>): Boolean {
 fun parseCave(input: List<String>): Cave {
     val cave = Cave()
     var maxY = Int.MIN_VALUE
-    var minY = Int.MAX_VALUE
-    var minX = Int.MAX_VALUE
-    var maxX = Int.MIN_VALUE
     for(line in input) {
         val coordinateTokens = line.split(" -> ")
         for(i in 0 until coordinateTokens.size - 1) {
             val rockPathStart = Pair(coordinateTokens[i].split(",")[0].toInt(), coordinateTokens[i].split(",")[1].toInt())
             val rockPathEnd = Pair(coordinateTokens[i + 1].split(",")[0].toInt(), coordinateTokens[i + 1].split(",")[1].toInt())
             cave.addRockPath(RockPath(rockPathStart, rockPathEnd))
-            minY = minOf(minY, rockPathStart.second, rockPathEnd.second)
             maxY = maxOf(maxY, rockPathStart.second, rockPathEnd.second)
-            minX = minOf(minX, rockPathStart.first, rockPathEnd.first)
-            maxX = maxOf(maxX, rockPathStart.first, rockPathEnd.first)
         }
     }
-    println("min x $minX, max x $maxX")
-    println("min y $minY, max y $maxY")
     cave.maxRockY = maxY
     return cave
 }
 
 class Cave {
     private val rockPaths = arrayListOf<RockPath>()
-    private val unitOfSands = arrayListOf<Pair<Int, Int>>()
+    private val rocks = hashSetOf<Pair<Int, Int>>()
+    private val unitOfSands = hashSetOf<Pair<Int, Int>>()
     private var isPart2 = false
     var maxRockY = -1
 
     fun canUnitOfSandMoveToPosition(unitOfSandPosition: Pair<Int, Int>): Boolean {
         return isAir(unitOfSandPosition)
+    }
+
+    fun isAirPart2(position: Pair<Int, Int>): Boolean {
+        return position.second != maxRockY && position !in rocks && position !in unitOfSands
     }
 
     private fun isAir(position: Pair<Int, Int>): Boolean {
@@ -109,6 +130,19 @@ class Cave {
         unitOfSands.clear()
         maxRockY += 2
         isPart2 = true
+        for (rockPath in rockPaths) {
+            if(rockPath.isHorizontal()) {
+                val y = rockPath.start.second
+                for(x in rockPath.xRange()) {
+                    rocks.add(Pair(x, y))
+                }
+            } else if (rockPath.isVertical()) {
+                val x = rockPath.start.first
+                for(y in rockPath.yRange()) {
+                    rocks.add(Pair(x, y))
+                }
+            }
+        }
     }
 
     fun getUnitsOfSandAtRest(): Int {
