@@ -4,15 +4,60 @@ import readLines
 
 fun main() {
     val valves = parseValves(readLines("/day16/input.txt"))
-    val maxReleasedPressure = calculateMaxReleasedPressureForUpperBoundMinutes(valves, 30)
-    println("part1: $maxReleasedPressure")
-}
 
-
-fun calculateMaxReleasedPressureForUpperBoundMinutes(valves: List<Valve>, upperBoundInMinutes: Int): Int {
     val distances = calculateDistanceBetweenEachValve(valves)
     val startValve = valves.last { it.name == "AA" }
     val valvesWithPressureRateHigherThanZero = valves.filter { it.rate > 0 }
+    val maxReleasedPressure = calculateMaxReleasedPressureForUpperBoundMinutes(startValve, valvesWithPressureRateHigherThanZero, distances, 30)
+    println("part1: $maxReleasedPressure")
+
+    val part2 = part2(startValve, valvesWithPressureRateHigherThanZero, distances, 26)
+    println("part2: $part2")
+}
+
+fun part2(
+    startValve: Valve,
+    valvesWithPressureRateHigherThanZero: List<Valve>,
+    distances: Map<Valve, Map<Valve, Int>>,
+    upperBoundInMinutes: Int
+): Int {
+    val combinations = generateCombinations(valvesWithPressureRateHigherThanZero, valvesWithPressureRateHigherThanZero.size / 2)
+
+    var max = Int.MIN_VALUE
+    for (combination in combinations) {
+        val complementCombination = arrayListOf<Valve>()
+        for (valve in valvesWithPressureRateHigherThanZero) {
+            if (valve !in combination) {
+                complementCombination.add(valve)
+            }
+        }
+        val m1 = calculateMaxReleasedPressureForUpperBoundMinutes(startValve, combination, distances, upperBoundInMinutes)
+        val m2 = calculateMaxReleasedPressureForUpperBoundMinutes(startValve, complementCombination, distances, upperBoundInMinutes)
+        max = maxOf(max, m1 + m2)
+    }
+
+    return max
+}
+
+fun generateCombinations(valvesWithPressureRateHigherThanZero: List<Valve>, sampleSize: Int): List<List<Valve>> {
+    val combinations = arrayListOf<List<Valve>>()
+
+    val currentCombination = arrayOfNulls<Valve>(sampleSize).map { Valve("69", 69) }.toTypedArray()
+    fun helper(currentCombination: Array<Valve>, start: Int, end: Int, index: Int) {
+        if(index == currentCombination.size) {
+            combinations.add(currentCombination.toList())
+        } else if(start <= end) {
+            currentCombination[index] = valvesWithPressureRateHigherThanZero[start]
+            helper(currentCombination, start + 1, end, index + 1)
+            helper(currentCombination, start + 1, end, index)
+        }
+    }
+
+    helper(currentCombination, 0, valvesWithPressureRateHigherThanZero.size - 1, 0)
+    return combinations
+}
+
+fun calculateMaxReleasedPressureForUpperBoundMinutes(startValve: Valve, valvesWithPressureRateHigherThanZero: List<Valve>, distances:  Map<Valve, Map<Valve, Int>>, upperBoundInMinutes: Int): Int {
     var max = Int.MIN_VALUE
 
     val chosenValves = hashSetOf<Valve>()
@@ -77,8 +122,7 @@ fun calculateDistanceBetweenEachValve(valves: List<Valve>): Map<Valve, Map<Valve
 }
 
 fun parseValves(input: List<String>): List<Valve> {
-
-    val valves = input.map { parseValve(it) }
+    val valves = input.map { valveInput -> parseValve(valveInput) }
     val valvesByName = valves.associateBy { it.name }
 
     for ((index, line) in input.withIndex()) {
